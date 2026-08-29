@@ -1,0 +1,14 @@
+{
+  "tableName": "cr_helpdeskticket",
+  "displayName": "Helpdesk Ticket",
+  "description": "One row per conversation. Written by every topic (directly on resolution, or via the escalation path), giving IT the same reporting they'd get from a traditional ticketing tool.",
+  "columns": [
+    { "name": "cr_topic", "type": "Choice", "options": ["Password Reset", "Access Request", "Outage Check", "General / Escalated"] },
+    { "name": "cr_status", "type": "Choice", "options": ["Resolved", "Pending approval", "Open", "Escalated"] },
+    { "name": "cr_requestedby", "type": "Lookup", "targetTable": "systemuser" },
+    { "name": "cr_notes", "type": "Text", "maxLength": 2000 },
+    { "name": "cr_transcriptlink", "type": "Text", "maxLength": 500, "description": "Deep link back to the Copilot Studio / Teams conversation." },
+    { "name": "cr_createdon", "type": "DateTime" },
+    { "name": "cr_resolvedon", "type": "DateTime" }
+  ]
+}
