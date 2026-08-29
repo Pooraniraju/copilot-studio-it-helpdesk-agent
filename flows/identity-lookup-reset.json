@@ -1,0 +1,84 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "description": "Power Automate action invoked by the password-reset topic. Looks up identity via Entra ID before taking any action, then triggers a self-service reset.",
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "PowerVirtualAgents",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "userPrincipalName": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Get_user_profile_Entra_ID": {
+      "type": "OpenApiConnection",
+      "runAfter": {},
+      "inputs": {
+        "host": {
+          "connectionName": "shared_azuread",
+          "operationId": "GetUser",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuread"
+        },
+        "parameters": {
+          "userId": "@triggerBody()?['userPrincipalName']"
+        }
+      }
+    },
+    "Condition_User_found": {
+      "type": "If",
+      "runAfter": { "Get_user_profile_Entra_ID": ["Succeeded", "Failed"] },
+      "expression": {
+        "and": [{ "equals": ["@outcomes('Get_user_profile_Entra_ID')?['status']", "Succeeded"] }]
+      },
+      "actions": {
+        "Send_password_reset_via_Entra_ID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuread",
+              "operationId": "InvalidateAllRefreshTokensAndSendResetEmail",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuread"
+            },
+            "parameters": {
+              "userId": "@triggerBody()?['userPrincipalName']"
+            }
+          }
+        },
+        "Respond_to_Copilot_Found": {
+          "type": "Response",
+          "runAfter": { "Send_password_reset_via_Entra_ID": ["Succeeded"] },
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "identityFound": true,
+              "resetTriggered": true,
+              "ticketId": "@{guid()}"
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {
+          "Respond_to_Copilot_Not_found": {
+            "type": "Response",
+            "inputs": {
+              "statusCode": 200,
+              "body": {
+                "identityFound": false,
+                "resetTriggered": false,
+                "ticketId": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
