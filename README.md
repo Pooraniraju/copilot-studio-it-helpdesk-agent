@@ -12,20 +12,20 @@ A large share of helpdesk tickets are repetitive, well-defined requests (passwor
 
 ```mermaid
 flowchart TD
-    A[User message - Teams / web chat] --> B[Copilot Studio agent]
-    B --> C{Topic match}
-    C -- Password reset --> D[Identity check\n(Entra ID lookup action)]
-    C -- Access request --> E[Collect app name + justification]
-    C -- Outage check --> F[Call status API action]
-    C -- Unrecognized / low confidence --> G[Generative answers over\nIT knowledge base]
-    D --> H[Power Automate action:\ntrigger reset + notify user]
-    E --> I[Power Automate action:\ncreate approval workflow]
-    F --> J[Respond with live status]
-    G --> K{Resolved?}
-    H --> L[Create Dataverse ticket\nStatus: Resolved]
-    I --> M[Create Dataverse ticket\nStatus: Pending approval]
-    K -- Yes --> L
-    K -- No --> N[Escalate to human agent\n+ create Dataverse ticket: Open]
+A[User message - Teams / web chat] --> B[Copilot Studio agent]
+B --> C{Topic match}
+C -- Password reset --> D["Identity check<br/>(Entra ID lookup action)"]
+C -- Access request --> E[Collect app name + justification]
+C -- Outage check --> F[Call status API action]
+C -- Unrecognized / low confidence --> G["Generative answers over<br/>IT knowledge base"]
+D --> H["Power Automate action:<br/>trigger reset + notify user"]
+E --> I["Power Automate action:<br/>create approval workflow"]
+F --> J[Respond with live status]
+G --> K{Resolved?}
+H --> L["Create Dataverse ticket<br/>Status: Resolved"]
+I --> M["Create Dataverse ticket<br/>Status: Pending approval"]
+K -- Yes --> L
+K -- No --> N["Escalate to human agent<br/>+ create Dataverse ticket: Open"]
 ```
 
 ## How it works
@@ -49,6 +49,12 @@ flowchart TD
 - Power Automate (identity lookup, reset, approval and ticketing actions)
 - Microsoft Dataverse (ticket table)
 - Microsoft Teams channel
+
+## Repository contents
+
+- [`topics/`](topics) — reference Copilot Studio topic definitions (password reset, access request, outage check).
+- [`flows/`](flows) — the two supporting Power Automate actions the topics call into.
+- [`dataverse/`](dataverse) — the ticket table schema.
 
 ## About
 
