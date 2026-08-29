@@ -1,0 +1,51 @@
+kind: AdaptiveDialog
+beginDialog:
+  kind: OnRecognizedIntent
+  id: main
+  intent:
+    triggerQueries:
+      - "I need access to an app"
+      - "request software access"
+      - "can I get access to {application}"
+      - "need a license for"
+  actions:
+    - kind: Question
+      id: askApplication
+      variable: Topic.ApplicationName
+      prompt: "Which application or system do you need access to?"
+      entity: StringPrebuiltEntity
+
+    - kind: Question
+      id: askJustification
+      variable: Topic.Justification
+      prompt: "What's the business justification? (one sentence is fine)"
+      entity: StringPrebuiltEntity
+
+    - kind: InvokeFlowAction
+      id: startApprovalWorkflow
+      flowId: "flow://create-approval-workflow"
+      input:
+        applicationName: =Topic.ApplicationName
+        justification: =Topic.Justification
+        requestedBy: =System.User.Id
+      output:
+        binding:
+          ticketId: Topic.TicketId
+          approverName: Topic.ApproverName
+
+    - kind: SendActivity
+      id: confirm
+      activity: "Got it. I've sent your request for **{Topic.ApplicationName}** to {Topic.ApproverName} for approval. Your ticket number is **{Topic.TicketId}** — you'll be notified once it's decided. This doesn't grant access itself."
+
+# --- Reference metadata (not part of the runtime schema, kept for portfolio documentation) ---
+referenceInfo:
+  triggerPhrases:
+    - "I need access to an app"
+    - "request software access"
+    - "can I get access to {application}"
+    - "need a license for"
+  designNote: >
+    Deliberately does not self-approve: the topic only collects the request and
+    hands it to a Power Automate approval flow addressed to the resource owner.
+  dataverseWriteOn:
+    onSubmit: "Status = Pending approval"
