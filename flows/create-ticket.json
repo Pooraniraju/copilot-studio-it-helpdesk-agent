@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "description": "Power Automate action invoked by every topic (directly or via escalation) to log a Dataverse ticket for the conversation.",
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "PowerVirtualAgents",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "topic": { "type": "string" },
+            "status": { "type": "string" },
+            "notes": { "type": "string" },
+            "transcriptLink": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Create_Dataverse_ticket": {
+      "type": "OpenApiConnection",
+      "runAfter": {},
+      "inputs": {
+        "host": {
+          "connectionName": "shared_commondataserviceforapps",
+          "operationId": "CreateRecord",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+        },
+        "parameters": {
+          "entityName": "cr_helpdesktickets",
+          "item/cr_topic": "@triggerBody()?['topic']",
+          "item/cr_status": "@triggerBody()?['status']",
+          "item/cr_notes": "@triggerBody()?['notes']",
+          "item/cr_transcriptlink": "@triggerBody()?['transcriptLink']",
+          "item/cr_createdon": "@utcNow()"
+        }
+      }
+    },
+    "Respond_with_ticket_id": {
+      "type": "Response",
+      "runAfter": { "Create_Dataverse_ticket": ["Succeeded"] },
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "ticketId": "@outputs('Create_Dataverse_ticket')?['body/cr_helpdeskticketid']"
+        }
+      }
+    }
+  }
+}
