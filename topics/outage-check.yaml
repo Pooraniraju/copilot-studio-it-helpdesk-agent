@@ -1,0 +1,57 @@
+kind: AdaptiveDialog
+beginDialog:
+  kind: OnRecognizedIntent
+  id: main
+  intent:
+    triggerQueries:
+      - "is it just me"
+      - "is the system down"
+      - "outage check"
+      - "is {system} down right now"
+  actions:
+    - kind: Question
+      id: askSystem
+      variable: Topic.SystemName
+      prompt: "Which system do you want me to check — e.g. VPN, email, or the intranet portal?"
+      entity: StringPrebuiltEntity
+
+    - kind: InvokeFlowAction
+      id: callStatusApi
+      flowId: "flow://get-system-status"
+      input:
+        systemName: =Topic.SystemName
+      output:
+        binding:
+          statusText: Topic.StatusText
+          isHealthy: Topic.IsHealthy
+
+    - kind: SendActivity
+      id: respond
+      activity: "Current status for **{Topic.SystemName}**: {Topic.StatusText}"
+
+    - kind: ConditionGroup
+      id: branchOnHealth
+      conditions:
+        - id: unhealthy
+          condition: =Topic.IsHealthy = false
+          actions:
+            - kind: InvokeFlowAction
+              id: createInfoTicket
+              flowId: "flow://create-ticket"
+              input:
+                topic: "Outage Check"
+                status: "Resolved"
+                notes: =Concatenate("Reported known issue with ", Topic.SystemName)
+
+# --- Reference metadata (not part of the runtime schema, kept for portfolio documentation) ---
+referenceInfo:
+  triggerPhrases:
+    - "is it just me"
+    - "is the system down"
+    - "outage check"
+    - "is {system} down right now"
+  actionsUsed:
+    - "Power Automate action: get-system-status (calls internal status API)"
+  fallback: >
+    If SystemName doesn't match a known system, generative answers over the IT
+    knowledge base handles the rest of the conversation.
